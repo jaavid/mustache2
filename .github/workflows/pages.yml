@@ -1,0 +1,45 @@
+name: Test and deploy Mustache2
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm test
+      - name: Verify original character sprites
+        run: |
+          test -s assets/ramin.png
+          test -s assets/borhan.png
+          test -s assets/mammad.png
+          file assets/*.png
+      - name: Prepare static Pages artifact
+        run: |
+          mkdir -p dist/assets dist/lib
+          cp index.html style.css game.js dist/
+          cp assets/*.png dist/assets/
+          cp lib/logic.mjs dist/lib/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+  deploy:
+    environment:
+      name: github-pages
+      url: https://jaavid.github.io/mustache2/
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

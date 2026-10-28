@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#121723" />
+  <meta name="description" content="Mustache2 — a playful 2D hide-and-seek game. Find Ramin, Borhan and Mammad, then catch them with a mustache launcher." />
+  <title>Mustache2 — شکار سیبیل</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main id="gameRoot" aria-label="بازی دوبعدی شکار سیبیل">
+    <canvas id="world" aria-label="نمای دوبعدی خانه" tabindex="0"></canvas>
+    <header class="hud">
+      <div class="brand"><span class="mark">〰</span><div><strong>MUSTACHE<span>2</span></strong><small>HIDE · CHASE · CATCH</small></div></div>
+      <div class="metrics"><div class="metric"><small>شکار شده</small><strong id="caught">۰ / ۳</strong></div><div class="metric"><small>زمان باقی‌مانده</small><strong id="time">۰۳:۰۰</strong></div><div class="metric narrow"><small>امتیاز</small><strong id="score">۰</strong></div></div>
+      <button id="pause" class="icon-btn" type="button" aria-label="توقف بازی">Ⅱ</button>
+    </header>
+    <div class="hint" id="hint" aria-live="polite">خانه را بگرد؛ سه نفر مخفی شده‌اند!</div>
+    <div class="bottom"><div class="controls-legend"><span><kbd>WASD</kbd> حرکت</span><span><kbd>SHIFT</kbd> دویدن</span><span><kbd>E</kbd> جست‌وجو</span><span><kbd>CLICK</kbd> شلیک</span></div><div class="ammo"><span class="stache">〰</span><span>سیبیل‌پرتاب‌کن</span><small id="accuracy">دقت: —</small></div></div>
+    <div class="touch" id="touch"><div class="joy-zone" id="joyZone"><div class="joy-ring"><div id="joyKnob"></div></div></div><div class="touch-actions"><button id="inspect" type="button" aria-label="جست‌وجو">⌕<small>بگرد</small></button><button id="fire" type="button" aria-label="شلیک سیبیل">〰<small>شلیک</small></button></div></div>
+    <section id="overlay" class="overlay" aria-labelledby="overlayTitle">
+      <div class="panel">
+        <p class="eyebrow" id="overlayEyebrow">THE GREAT MUSTACHE HUNT</p>
+        <div class="mascot" aria-hidden="true"><span>👀</span><b>〰</b></div>
+        <h1 id="overlayTitle">شکار سیبیل آغاز شد!</h1>
+        <p id="overlayDesc">رامین، برهان و ممد در این خانه قایم شده‌اند. پیدایشان کن، دنبالشـان بدو و سیبیل را دقیق روی لبشان بنشان.</p>
+        <div class="instruction"><span>۱. خانه را بگرد</span><span>۲. فراری‌ها را تعقیب کن</span><span>۳. روی لب شلیک کن</span></div>
+        <button id="start" type="button" class="primary">شروع بازی <span>←</span></button>
+        <button id="sound" type="button" class="secondary">صدا: روشن</button>
+        <small class="footer-note">۲D · سه شخصیت اصلی Mustache · بدون ثبت‌نام</small>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./game.js"></script>
+</body>
+</html>
