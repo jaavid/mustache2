@@ -40,14 +40,14 @@ This is a playable **v0.2 single-level prototype**. It uses a stylized top-down 
 
 ## Official Telegram Games integration
 
-Telegram Game Card: **https://t.me/RJTtobot?game=mustache2** (same bot as Mustache1).
+Telegram Game Card: **https://t.me/RJTtobot?game=Mustache2** (same bot as Mustache1).
 The standalone website stays playable without login; session-authenticated
 Telegram players can submit casual scores to the existing Cloudflare Worker
 at `https://mustache.zedai.ir/api/mustache2/`, view a separate top-ten board,
 and share via Telegram's native Game proxy.
 
 This requires the companion PR in `jaavid/Mustache` to be deployed first,
-and one-time registration of the **mustache2** game under @RJTtobot using
+and one-time registration of the **Mustache2** game under @RJTtobot using
 BotFather `/newgame`. Do not replace the existing **mustache** game or webhook.
 
 **Unverified casual scores only.** No wallet rewards or tokens are issued.
