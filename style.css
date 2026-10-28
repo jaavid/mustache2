@@ -267,3 +267,12 @@ button:focus-visible, canvas:focus-visible { outline: 3px solid var(--sun); outl
   .metric strong { font-size: 11px; }
   .icon-btn { width: 32px; height: 32px; }
 }
+
+/* Official Telegram Games controls: hidden entirely for ordinary web players. */
+.telegram-panel[hidden] { display: none !important; }
+.telegram-panel { width: 100%; margin-top: 12px; display: grid; gap: 8px; text-align: center; }
+.telegram-panel small { display: block; font-size: 11px; line-height: 1.8; opacity: .8; }
+.telegram-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.telegram-actions button { flex: 1 1 128px; min-height: 40px; cursor: pointer; }
+#telegramLeaderboard { margin: 0; padding: 0; list-style: none; text-align: right; max-height: 140px; overflow-y: auto; }
+#telegramLeaderboard li { padding: 4px 10px; font-size: 12px; border-bottom: 1px solid rgba(255,255,255,.08); }

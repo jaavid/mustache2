@@ -1,5 +1,6 @@
 import { clamp, faceHit, blocked, uniqueSpots, gridPath } from './lib/logic.mjs';
 import { drawFloorDetail, drawSetDressing } from './scenery.js';
+import { createTelegramGameBridge } from './telegram-game.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world'), ctx = canvas.getContext('2d', { alpha: false });
@@ -56,6 +57,22 @@ const rooms = [
   { x: 1014, y: 540, w: 407, h: 392, name: 'انباری', c: '#484453' }
 ];
 const number = value => new Intl.NumberFormat('fa-IR').format(value);
+const telegramBridge = createTelegramGameBridge({
+  onStatus: text => { $('telegramStatus').textContent = text; },
+  onLeaderboard: data => {
+    const list = $('telegramLeaderboard');
+    list.replaceChildren();
+    for (const player of (data?.top || []).slice(0, 10)) {
+      const item = document.createElement('li');
+      item.textContent = number(player.rank) + '. ' + player.name + ' — ' + number(player.score);
+      list.append(item);
+    }
+    if (data?.me) $('telegramStatus').textContent += ' رتبه شما: ' + number(data.me.rank);
+  },
+});
+$('telegramPanel').hidden = !telegramBridge.enabled;
+$('telegramShare').addEventListener('click', () => telegramBridge.shareScore());
+$('telegramRank').addEventListener('click', () => { void telegramBridge.leaderboard(); });
 let phase = 'menu', player = { x: 260, y: 435, vx: 0, vy: 0, angle: 0 };
 let actors = [], projectiles = [], effects = [], clock = 180, score = 0, fired = 0, caught = 0, lastShot = 0;
 let w = innerWidth, h = innerHeight, pixelRatio = 1, lastFrame = 0, now = 0, camera = { x: 0, y: 0 };
@@ -97,6 +114,7 @@ function reset() {
     wave: rand(0, Math.PI * 2), visibleFor: 0, escapeCount: 0
   }));
   clock = 180; score = 0; fired = 0; caught = 0; projectiles = []; effects = []; lastShot = 0;
+  telegramBridge.startRound();
   phase = 'playing'; nextHudAt = 0; $('overlay').classList.add('hidden'); message('سه نفر داخل خانه مخفی‌اند؛ نزدیک وسایل بگرد!', 6);
   renderHud(); canvas.focus();
 }
@@ -140,6 +158,9 @@ function finish(victory) {
   phase = victory ? 'won' : 'lost';
   const final = Math.round(score + (victory ? Math.max(0, clock) * 10 : 0));
   score = final; renderHud();
+  void telegramBridge.finishRound({
+    score: final, caught, shots: fired, elapsedSeconds: Math.round(180 - clock),
+  });
   if (victory) {
     try { const record = Number(localStorage.getItem('mustache2-best') || 0); if (final > record) localStorage.setItem('mustache2-best', final); } catch {}
     sound(750, .4, 'sine', .06);
