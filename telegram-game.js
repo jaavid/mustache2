@@ -1,7 +1,7 @@
 /** Official Telegram Games bridge (not a Mini App). Never submit scores outside Telegram sessions.
  * Backend scores are casual-only until authoritative replay is implemented.
  */
-export const TELEGRAM_BOT_GAME_LINK = 'https://t.me/RJTtobot?game=mustache2';
+export const TELEGRAM_BOT_GAME_LINK = 'https://t.me/RJTtobot?game=Mustache2';
 const BASE = 'https://mustache.zedai.ir';
 const TOKEN_FORMAT = /^[0-9a-f]{64}$/;
 
