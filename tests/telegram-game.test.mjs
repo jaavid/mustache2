@@ -12,7 +12,7 @@ test('standalone visitors never call the score API', async () => {
   await bridge.finishRound({ score: 1000, caught: 1, shots: 3, elapsedSeconds: 180 });
   assert.equal(bridge.enabled, false);
   assert.equal(requests, 0);
-  assert.match(TELEGRAM_BOT_GAME_LINK, /game=mustache2/);
+  assert.match(TELEGRAM_BOT_GAME_LINK, /game=Mustache2/);
 });
 
 test('only valid Telegram sessions submit start/finish and fetch leaderboards', async () => {
