@@ -1,0 +1,22 @@
+import { test, expect } from '@playwright/test';
+test('the farmhouse loads, starts, shoots and pauses without browser errors', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', error => errors.push(String(error)));
+  await page.goto('/');
+  await expect(page.locator('#overlayTitle')).toContainText('شکار سیبیل');
+  await page.locator('#start').click();
+  await expect(page.locator('#overlay')).toHaveClass(/hidden/);
+  await expect(page.locator('#world')).toBeVisible();
+  await page.mouse.move(640, 420);
+  await page.mouse.click(640, 420);
+  await expect(page.locator('#accuracy')).not.toContainText('—');
+  await page.keyboard.press('p');
+  await expect(page.locator('#overlayTitle')).toContainText('استراحت');
+  await page.locator('#start').click();
+  await expect(page.locator('#overlay')).toHaveClass(/hidden/);
+  await page.waitForTimeout(1000);
+  const count = await page.locator('#caught').textContent();
+  expect(count).toContain('۳');
+  await page.screenshot({ path: 'artifacts/mustache2-game.png', animations: 'disabled' });
+  expect(errors).toEqual([]);
+});
