@@ -4,9 +4,15 @@ test('the farmhouse loads, starts, shoots and pauses without browser errors', as
   page.on('pageerror', error => errors.push(String(error)));
   await page.goto('/');
   await expect(page.locator('#overlayTitle')).toContainText('شکار سیبیل');
+  await page.evaluate(() => document.fonts.ready);
+  const font = await page.locator('body').evaluate(el => getComputedStyle(el).fontFamily);
+  expect(font).toContain('Noto Sans Arabic');
+  expect(await page.evaluate(() => document.fonts.check('500 14px "Noto Sans Arabic"'))).toBe(true);
   await page.locator('#start').click();
   await expect(page.locator('#overlay')).toHaveClass(/hidden/);
   await expect(page.locator('#world')).toBeVisible();
+  await expect(page.locator('#roster .roster-person')).toHaveCount(3);
+  await expect(page.locator('#timerFill')).toBeVisible();
   await page.mouse.move(640, 420);
   await page.mouse.click(640, 420);
   await expect(page.locator('#accuracy')).not.toContainText('—');
@@ -19,4 +25,21 @@ test('the farmhouse loads, starts, shoots and pauses without browser errors', as
   expect(count).toContain('۳');
   await page.screenshot({ path: 'artifacts/mustache2-game.png', animations: 'disabled' });
   expect(errors).toEqual([]);
+});
+
+test('mobile game controls and localized UI stay usable', async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const page = await context.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.goto('/');
+  await expect(page.locator('#overlayTitle')).toBeVisible();
+  await page.locator('#start').click();
+  await expect(page.locator('#touch')).toBeVisible();
+  await page.locator('#inspect').click();
+  await page.locator('#fire').click();
+  await expect(page.locator('#accuracy')).not.toContainText('—');
+  await page.screenshot({ path: 'artifacts/mustache2-mobile.png', animations: 'disabled' });
+  expect(errors).toEqual([]);
+  await context.close();
 });

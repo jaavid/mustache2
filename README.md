@@ -15,11 +15,11 @@ This repository is a static HTML5 game: open `index.html` with a local static se
 
 ## Technical approach
 
-Zero runtime dependencies. HTML/CSS and Canvas 2D, procedural room/furniture drawing, 2D collision and grid-based pursuit/evasion, simulated mustache projectiles, original character PNG sprite sheets, Web Audio SFX. Works offline when served with local assets. Deliberately separate from the original Phaser/Telegram/wallet stack.
+Zero runtime dependencies. HTML/CSS and Canvas 2D, procedural room/furniture drawing (including a dedicated scenery module), 2D collision and grid-based pursuit/evasion, simulated mustache projectiles, original character PNG sprite sheets, Web Audio SFX. The new UI ships with a locally hosted **Noto Sans Arabic variable font (SIL OFL 1.1)** and accessible status indicators. Works offline when served with local assets. Deliberately separate from the original Phaser/Telegram/wallet stack.
 
 The three character images are copied unchanged from the owner's original Mustache repository; their copyright status is **not** claimed to be CC0. The new source code in this repository is MIT licensed; original Mustache character artwork remains governed by its original rights.
 
-See [ASSETS.md](ASSETS.md) for CC0 options and provenance.
+See [ASSETS.md](ASSETS.md) for CC0 options, font licensing, and provenance.
 
 ## Local development
 
@@ -36,4 +36,4 @@ Settings → Pages → Deploy from a branch → `main` / `(root)`. Alternatively
 
 ## Scope and limitations
 
-This is a playable **v0.1 single-level prototype**. It uses a stylized top-down house with upright 2D character cutouts rather than six-direction walking sprites. It is single-player and local: there is no Telegram leaderboard, online multiplayer or token reward. Pathfinding and hit detection are intentionally simple and will be tuned after playtesting.
+This is a playable **v0.2 single-level prototype**. It uses a stylized top-down house with upright 2D character cutouts rather than six-direction walking sprites. It is single-player and local: there is no Telegram leaderboard, online multiplayer or token reward. Pathfinding and hit detection are intentionally simple and will be tuned after playtesting.

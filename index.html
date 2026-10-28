@@ -3,32 +3,77 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#121723" />
-  <meta name="description" content="Mustache2 — a playful 2D hide-and-seek game. Find Ramin, Borhan and Mammad, then catch them with a mustache launcher." />
+  <meta name="theme-color" content="#111628" />
+  <meta name="description" content="Mustache2: بازی دوبعدی قایم‌باشک، تعقیب و شکار سیبیل با رامین، برهان و ممد." />
+  <meta property="og:title" content="Mustache2 — شکار سیبیل" />
+  <meta property="og:description" content="سه شخصیت، یک خانه پر از مخفیگاه و یک تفنگ سیبیل‌پرتاب‌کن!" />
   <title>Mustache2 — شکار سیبیل</title>
+  <link rel="preload" href="./assets/fonts/NotoSansArabic.ttf" as="font" type="font/ttf" crossorigin />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
   <main id="gameRoot" aria-label="بازی دوبعدی شکار سیبیل">
-    <canvas id="world" aria-label="نمای دوبعدی خانه" tabindex="0"></canvas>
+    <canvas id="world" aria-label="نقشه دوبعدی خانه؛ با کلیدهای جهت‌دار یا WASD حرکت کنید" tabindex="0"></canvas>
+    <div class="atmosphere" aria-hidden="true"></div>
+
     <header class="hud">
-      <div class="brand"><span class="mark">〰</span><div><strong>MUSTACHE<span>2</span></strong><small>HIDE · CHASE · CATCH</small></div></div>
-      <div class="metrics"><div class="metric"><small>شکار شده</small><strong id="caught">۰ / ۳</strong></div><div class="metric"><small>زمان باقی‌مانده</small><strong id="time">۰۳:۰۰</strong></div><div class="metric narrow"><small>امتیاز</small><strong id="score">۰</strong></div></div>
-      <button id="pause" class="icon-btn" type="button" aria-label="توقف بازی">Ⅱ</button>
+      <div class="brand" aria-label="Mustache 2">
+        <span class="brand-logo" aria-hidden="true">〰</span>
+        <div class="brand-text"><strong>MUSTACHE<span>2</span></strong><small>شکارِ سیبیل</small></div>
+      </div>
+      <div class="hud-center">
+        <div class="metrics">
+          <div class="metric"><span class="metric-icon" aria-hidden="true">✦</span><div><small>گرفته‌شده</small><strong id="caught" dir="ltr">۰ / ۳</strong></div></div>
+          <div class="metric timer-metric"><span class="metric-icon timer-icon" aria-hidden="true">◷</span><div><small>زمان باقی‌مانده</small><strong id="time" dir="ltr">03:00</strong></div></div>
+          <div class="metric score-metric"><span class="metric-icon" aria-hidden="true">★</span><div><small>امتیاز</small><strong id="score" dir="ltr">۰</strong></div></div>
+        </div>
+        <div class="timer-track" aria-label="زمان باقی‌مانده"><span id="timerFill"></span></div>
+      </div>
+      <button id="pause" class="icon-btn" type="button" aria-label="توقف بازی" title="توقف / ادامه">Ⅱ</button>
     </header>
-    <div class="hint" id="hint" aria-live="polite">خانه را بگرد؛ سه نفر مخفی شده‌اند!</div>
-    <div class="bottom"><div class="controls-legend"><span><kbd>WASD</kbd> حرکت</span><span><kbd>SHIFT</kbd> دویدن</span><span><kbd>E</kbd> جست‌وجو</span><span><kbd>CLICK</kbd> شلیک</span></div><div class="ammo"><span class="stache">〰</span><span>سیبیل‌پرتاب‌کن</span><small id="accuracy">دقت: —</small></div></div>
-    <div class="touch" id="touch"><div class="joy-zone" id="joyZone"><div class="joy-ring"><div id="joyKnob"></div></div></div><div class="touch-actions"><button id="inspect" type="button" aria-label="جست‌وجو">⌕<small>بگرد</small></button><button id="fire" type="button" aria-label="شلیک سیبیل">〰<small>شلیک</small></button></div></div>
+
+    <aside class="side-panel" aria-label="پیشرفت مأموریت">
+      <div class="panel-caption"><span class="status-dot"></span> مأموریت ۰۱ <span class="panel-caption-sub">/ خانه مرموز</span></div>
+      <h2>سه نفر، سه سیبیل!</h2>
+      <p>قبل از پایان وقت، هر سه نفر را پیدا کن.</p>
+      <div class="roster" id="roster" aria-live="polite">
+        <div class="roster-person" data-character="ramin"><span class="person-avatar avatar-ramin"></span><span class="person-info"><b>رامین</b><small>پنهان شده</small></span><span class="person-status">؟</span></div>
+        <div class="roster-person" data-character="borhan"><span class="person-avatar avatar-borhan"></span><span class="person-info"><b>برهان</b><small>پنهان شده</small></span><span class="person-status">؟</span></div>
+        <div class="roster-person" data-character="mammad"><span class="person-avatar avatar-mammad"></span><span class="person-info"><b>ممد</b><small>پنهان شده</small></span><span class="person-status">؟</span></div>
+      </div>
+    </aside>
+
+    <div class="room-tag"><span class="room-tag-icon">⌂</span><span id="roomName">اتاق نشیمن</span></div>
+    <div class="hint" id="hint" role="status" aria-live="polite"><span class="hint-spark" aria-hidden="true">✦</span><span id="hintText">خانه را بگرد؛ سه نفر مخفی شده‌اند!</span></div>
+    <div id="inspectPrompt" class="inspect-prompt" aria-live="off"><kbd>E</kbd><span>این اطراف را بگرد</span></div>
+
+    <footer class="bottom">
+      <div class="controls-legend" aria-label="راهنمای کنترل"><span><kbd>WASD</kbd> حرکت</span><span><kbd>SHIFT</kbd> دویدن</span><span><kbd>E</kbd> جست‌وجو</span><span><kbd>CLICK</kbd> شلیک</span></div>
+      <div class="ammo"><span class="ammo-symbol" aria-hidden="true">〰</span><div><strong>سیبیل‌پرتاب‌کن</strong><small id="accuracy">دقت: —</small></div><span class="ammo-live"></span></div>
+    </footer>
+    <div class="touch" id="touch">
+      <div class="joy-zone" id="joyZone"><div class="joy-ring"><div id="joyKnob"></div></div></div>
+      <div class="touch-actions">
+        <button id="inspect" type="button" aria-label="جست‌وجو"><span>⌕</span><small>بگرد</small></button>
+        <button id="fire" type="button" aria-label="شلیک سیبیل"><span>〰</span><small>شلیک</small></button>
+      </div>
+    </div>
+
     <section id="overlay" class="overlay" aria-labelledby="overlayTitle">
       <div class="panel">
-        <p class="eyebrow" id="overlayEyebrow">THE GREAT MUSTACHE HUNT</p>
-        <div class="mascot" aria-hidden="true"><span>👀</span><b>〰</b></div>
+        <div class="overlay-topline"><span class="topline-dot"></span><span id="overlayEyebrow">THE GREAT MUSTACHE HUNT</span><span class="topline-dot"></span></div>
+        <div class="mascot" aria-hidden="true">
+          <span class="mascot-halo"></span><span class="mascot-eyes">● ●</span><b>〰</b>
+          <span class="spark spark-one">✦</span><span class="spark spark-two">✳</span>
+        </div>
+        <div class="panel-step">مرحله اول · خانه مرموز</div>
         <h1 id="overlayTitle">شکار سیبیل آغاز شد!</h1>
         <p id="overlayDesc">رامین، برهان و ممد در این خانه قایم شده‌اند. پیدایشان کن، دنبالشـان بدو و سیبیل را دقیق روی لبشان بنشان.</p>
-        <div class="instruction"><span>۱. خانه را بگرد</span><span>۲. فراری‌ها را تعقیب کن</span><span>۳. روی لب شلیک کن</span></div>
-        <button id="start" type="button" class="primary">شروع بازی <span>←</span></button>
+        <div class="instruction"><div><b>۰۱</b><span>بگرد و کشف کن</span></div><div><b>۰۲</b><span>دنبالشون بدو</span></div><div><b>۰۳</b><span>روی لب بزن!</span></div></div>
+        <button id="start" type="button" class="primary">شروع بازی <span aria-hidden="true">←</span></button>
         <button id="sound" type="button" class="secondary">صدا: روشن</button>
-        <small class="footer-note">۲D · سه شخصیت اصلی Mustache · بدون ثبت‌نام</small>
+        <small class="footer-note">بازی دوبعدی · رامین، برهان، ممد · بدون نصب و ثبت‌نام</small>
+        <small class="best-note" id="bestScore"></small>
       </div>
     </section>
   </main>

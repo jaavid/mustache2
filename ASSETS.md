@@ -8,6 +8,14 @@
 | assets/borhan.png | https://github.com/jaavid/Mustache/blob/main/src/assets/borhan-sheet.png | 210x362, 4 frames |
 | assets/mammad.png | https://github.com/jaavid/Mustache/blob/main/src/assets/mammad-sheet.png | 87x150, 4 frames |
 
+## Locally hosted UI font
+
+- Family: **Noto Sans Arabic**, variable (`wght` and `wdth`)
+- Binary: `assets/fonts/NotoSansArabic.ttf` (source: `google/fonts/ofl/notosansarabic/NotoSansArabic[wdth,wght].ttf`)
+- SIL Open Font License 1.1: `assets/fonts/OFL.txt` (copied unchanged)
+- Official upstream: https://github.com/google/fonts/tree/main/ofl/notosansarabic
+- Hosted from this repository; no Google Fonts CDN request is made at runtime. The font license is separate from the game's MIT source-code license.
+
 Character files are from the owner's original Mustache repository and **are not claimed to be CC0**. The MIT license covers newly written source code, not these images.
 
 Rooms, floors, wall segments, furniture, mustache projectiles, particles and other graphics are drawn procedurally with Canvas 2D; audio is synthesized at runtime with Web Audio. No third-party assets are bundled.

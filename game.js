@@ -1,4 +1,5 @@
 import { clamp, faceHit, blocked, uniqueSpots, gridPath } from './lib/logic.mjs';
+import { drawFloorDetail, drawSetDressing } from './scenery.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('world'), ctx = canvas.getContext('2d', { alpha: false });
@@ -60,6 +61,7 @@ let actors = [], projectiles = [], effects = [], clock = 180, score = 0, fired =
 let w = innerWidth, h = innerHeight, pixelRatio = 1, lastFrame = 0, now = 0, camera = { x: 0, y: 0 };
 let pointer = { x: w / 2, y: h / 2, active: false };
 let toast = '', toastUntil = 0, audio = null, mute = false;
+let nextHudAt = 0;
 const pressed = new Set();
 const joystick = { id: null, x: 0, y: 0 };
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -85,7 +87,7 @@ function sound(frequency = 300, length = .11, shape = 'triangle', volume = .035)
     osc.connect(gain).connect(audio.destination); osc.start(start); osc.stop(start + length);
   } catch {}
 }
-function message(text, duration = 3) { toast = text; toastUntil = now + duration; $('hint').textContent = text; $('hint').style.opacity = 1; }
+function message(text, duration = 3) { toast = text; toastUntil = now + duration; $('hintText').textContent = text; $('hint').style.opacity = 1; }
 function reset() {
   player = { x: 320, y: 452, vx: 0, vy: 0, angle: 0 };
   const shuffled = uniqueSpots(spots, 3);
@@ -95,18 +97,40 @@ function reset() {
     wave: rand(0, Math.PI * 2), visibleFor: 0, escapeCount: 0
   }));
   clock = 180; score = 0; fired = 0; caught = 0; projectiles = []; effects = []; lastShot = 0;
-  phase = 'playing'; $('overlay').classList.add('hidden'); message('سه نفر داخل خانه مخفی‌اند؛ نزدیک وسایل بگرد!', 6);
+  phase = 'playing'; nextHudAt = 0; $('overlay').classList.add('hidden'); message('سه نفر داخل خانه مخفی‌اند؛ نزدیک وسایل بگرد!', 6);
   renderHud(); canvas.focus();
 }
 function renderHud() {
   $('caught').textContent = number(caught) + ' / ۳';
+  const pct = Math.max(0, Math.min(100, clock / 180 * 100));
+  $('timerFill').style.width = pct + '%';
+  $('timerFill').style.background = pct < 22 ? '#ff676e' : '';
+  const room = rooms.find(r => player.x >= r.x && player.x < r.x + r.w &&
+                               player.y >= r.y && player.y < r.y + r.h);
+  $('roomName').textContent = room?.name || 'راهرو';
+  const nearHidden = actors.some(a => a.state === 'hidden' && dist(a, player) < 155);
+  $('inspectPrompt').classList.toggle('active', phase === 'playing' && nearHidden);
+  for (const actor of actors) {
+    const row = document.querySelector('.roster-person[data-character="' + actor.id + '"]');
+    if (!row) continue;
+    const status = actor.state === 'captured' ? ['گرفته شد', '✓'] :
+                   actor.state === 'fleeing' ? ['در حال فرار!', '!'] : ['پنهان شده', '؟'];
+    row.dataset.state = actor.state;
+    row.querySelector('.person-info small').textContent = status[0];
+    row.querySelector('.person-status').textContent = status[1];
+  }
   const seconds = Math.ceil(Math.max(0, clock));
   $('time').textContent = String(Math.floor(seconds / 60)).padStart(2, '0') + ':' + String(seconds % 60).padStart(2, '0');
   $('score').textContent = number(score);
   $('accuracy').textContent = fired ? 'دقت: ' + number(Math.round(caught / fired * 100)) + '٪' : 'دقت: —';
   $('pause').textContent = phase === 'paused' ? '▶' : 'Ⅱ';
+  $('pause').setAttribute('aria-label', phase === 'paused' ? 'ادامه بازی' : 'توقف بازی');
 }
 function showOverlay(title, description, eyebrow, action) {
+  try {
+    const best = Number(localStorage.getItem('mustache2-best') || 0);
+    $('bestScore').textContent = best ? 'بهترین رکورد شما: ' + number(best) : '';
+  } catch { $('bestScore').textContent = ''; }
   $('overlayEyebrow').textContent = eyebrow;
   $('overlayTitle').textContent = title; $('overlayDesc').textContent = description;
   $('start').innerHTML = action + ' <span>←</span>'; $('overlay').classList.remove('hidden');
@@ -275,7 +299,7 @@ function simulate(dt) {
     if (p.ttl <= 0) effects.splice(i,1);
   }
   if (now > toastUntil) $('hint').style.opacity = 0;
-  renderHud();
+  if (now >= nextHudAt) { renderHud(); nextHudAt = now + .12; }
 }
 function roundedRect(x, y, width, height, radius, color) {
   ctx.beginPath(); ctx.roundRect(x,y,width,height,radius); ctx.fillStyle = color; ctx.fill();
@@ -283,12 +307,13 @@ function roundedRect(x, y, width, height, radius, color) {
 function renderHouse() {
   ctx.fillStyle = '#141b28'; ctx.fillRect(-2000,-2000,5600,5000);
   ctx.shadowBlur = 35; ctx.shadowColor = '#0008'; roundedRect(63,62,1390,900,8,'#262637'); ctx.shadowBlur=0;
-  for (const room of rooms) {
+  for (const [index, room] of rooms.entries()) {
     ctx.fillStyle = room.c; ctx.fillRect(room.x,room.y,room.w,room.h);
+    drawFloorDetail(ctx, room, index);
     ctx.strokeStyle = '#ffffff08'; ctx.lineWidth = 1;
     for (let x=room.x+25;x<room.x+room.w;x+=36) {ctx.beginPath();ctx.moveTo(x,room.y);ctx.lineTo(x,room.y+room.h);ctx.stroke();}
     for (let y=room.y+22;y<room.y+room.h;y+=36) {ctx.beginPath();ctx.moveTo(room.x,y);ctx.lineTo(room.x+room.w,y);ctx.stroke();}
-    ctx.save();ctx.fillStyle='#ffffff2d';ctx.font='bold 16px Tahoma';ctx.textAlign='center';ctx.fillText(room.name,room.x+room.w/2,room.y+33);ctx.restore();
+    ctx.save();ctx.fillStyle='#ffffff2d';ctx.font='800 16px "Noto Sans Arabic",Tahoma,sans-serif';ctx.textAlign='center';ctx.fillText(room.name,room.x+room.w/2,room.y+33);ctx.restore();
   }
   for (const wall of walls) {
     ctx.fillStyle = '#141b26'; ctx.fillRect(wall.x+3,wall.y+8,wall.w,wall.h);
@@ -301,6 +326,7 @@ function renderHouse() {
     ctx.strokeStyle='#ffffff2d';ctx.lineWidth=2;ctx.strokeRect(x-ww/2+8,y-hh/2+8,ww-16,hh-16);
   }
   for(const obj of furniture) renderFurniture(obj);
+  drawSetDressing(ctx, now);
   // doors have striped thresholds
   ctx.fillStyle = '#f3d7a055';
   for (const [x,y,v] of [[525,382,'v'],[525,752,'v'],[1002,320,'v'],[1002,669,'v'],[338,528,'h'],[773,528,'h'],[1197,528,'h']]) {
@@ -371,13 +397,23 @@ function renderActor(a) {
   ctx.restore();
 }
 function renderPlayer() {
-  ctx.save();ctx.translate(player.x,player.y);
-  ctx.fillStyle='#0007';ctx.beginPath();ctx.ellipse(3,7,26,12,0,0,Math.PI*2);ctx.fill();
+  ctx.save(); ctx.translate(player.x, player.y);
+  ctx.fillStyle = '#0008'; ctx.beginPath(); ctx.ellipse(4,9,29,13,0,0,Math.PI*2); ctx.fill();
   ctx.rotate(player.angle);
-  ctx.fillStyle='#3a3f58';ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#f3d9aa';ctx.beginPath();ctx.arc(0,0,15,0,Math.PI*2);ctx.fill();
-  ctx.fillStyle='#322638';ctx.beginPath();ctx.arc(-4,-5,3,0,Math.PI*2);ctx.arc(-4,5,3,0,Math.PI*2);ctx.fill();
-  roundedRect(13,-8,30,16,5,'#ff63a0');roundedRect(39,-4,13,8,3,'#f1c3d4');
+  // Cartoon boots, layered suit and a pink mustache launcher.
+  ctx.fillStyle='#181b2e';ctx.beginPath();ctx.ellipse(-16,-12,9,6,-.2,0,Math.PI*2);
+  ctx.ellipse(-16,12,9,6,.2,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#56718b';ctx.beginPath();ctx.arc(0,0,23,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='#adc6c2';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,18,0,Math.PI*2);ctx.stroke();
+  ctx.fillStyle='#f1d09f';ctx.beginPath();ctx.arc(2,0,14,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#2b293b';ctx.beginPath();ctx.arc(-1,-6,2.5,0,Math.PI*2);
+  ctx.arc(-1,6,2.5,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#edb8a3';ctx.beginPath();ctx.arc(7,0,3,0,Math.PI*2);ctx.fill();
+  ctx.shadowBlur=10;ctx.shadowColor='#ff7fa7a0';
+  roundedRect(11,-11,33,22,7,'#f46eab'); ctx.shadowBlur=0;
+  roundedRect(18,-7,16,14,5,'#ffb4d2');
+  roundedRect(40,-5,16,10,4,'#f5cf96');
+  ctx.fillStyle='#f8e8cc';ctx.fillRect(50,-2,7,4);
   ctx.restore();
 }
 function renderLight() {
@@ -406,7 +442,6 @@ function renderFrame() {
     ctx.moveTo(target.x,target.y-20);ctx.lineTo(target.x,target.y-8);
     ctx.moveTo(target.x,target.y+8);ctx.lineTo(target.x,target.y+20);ctx.stroke();
   }
-  const vignette=ctx.createRadialGradient(w/2-camera.x+player.x,w/2-camera.x+player.y,20,w/2-camera.x+player.x,w/2-camera.x+player.y,900);
   // Fixed-camera vignette is drawn in screen space rather than world coordinates.
   ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
   const shade=ctx.createRadialGradient(w/2,h/2,Math.min(w,h)*.15,w/2,h/2,Math.max(w,h)*.75);
