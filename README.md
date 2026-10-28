@@ -37,3 +37,17 @@ Settings → Pages → Deploy from a branch → `main` / `(root)`. Alternatively
 ## Scope and limitations
 
 This is a playable **v0.2 single-level prototype**. It uses a stylized top-down house with upright 2D character cutouts rather than six-direction walking sprites. It is single-player and local: there is no Telegram leaderboard, online multiplayer or token reward. Pathfinding and hit detection are intentionally simple and will be tuned after playtesting.
+
+## Official Telegram Games integration
+
+Telegram Game Card: **https://t.me/RJTtobot?game=mustache2** (same bot as Mustache1).
+The standalone website stays playable without login; session-authenticated
+Telegram players can submit casual scores to the existing Cloudflare Worker
+at `https://mustache.zedai.ir/api/mustache2/`, view a separate top-ten board,
+and share via Telegram's native Game proxy.
+
+This requires the companion PR in `jaavid/Mustache` to be deployed first,
+and one-time registration of the **mustache2** game under @RJTtobot using
+BotFather `/newgame`. Do not replace the existing **mustache** game or webhook.
+
+**Unverified casual scores only.** No wallet rewards or tokens are issued.
