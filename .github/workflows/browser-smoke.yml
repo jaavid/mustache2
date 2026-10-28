@@ -17,6 +17,7 @@ jobs:
           node-version: '22'
       - run: npm install --no-save --no-audit --no-fund @playwright/test@1.64.0
       - run: npm test
+      - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: mkdir -p artifacts
       - run: npx playwright test
