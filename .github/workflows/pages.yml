@@ -24,12 +24,15 @@ jobs:
           test -s assets/ramin.png
           test -s assets/borhan.png
           test -s assets/mammad.png
+          test -s assets/fonts/NotoSansArabic.ttf
+          test -s assets/fonts/OFL.txt
           file assets/*.png
       - name: Prepare static Pages artifact
         run: |
-          mkdir -p dist/assets dist/lib
-          cp index.html style.css game.js dist/
+          mkdir -p dist/assets/fonts dist/lib
+          cp index.html style.css game.js scenery.js dist/
           cp assets/*.png dist/assets/
+          cp assets/fonts/NotoSansArabic.ttf assets/fonts/OFL.txt dist/assets/fonts/
           cp lib/logic.mjs dist/lib/
       - uses: actions/upload-pages-artifact@v3
         with:
