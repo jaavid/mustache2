@@ -63,12 +63,14 @@ button:focus-visible, canvas:focus-visible { outline: 3px solid var(--sun); outl
 .roster { display: grid; gap: 7px; }
 .roster-person { display: flex; align-items: center; gap: 8px; padding: 5px 7px; border: 1px solid #ffffff17; border-radius: 11px;
   background: #ffffff0b; transition: background .2s,border-color .2s,opacity .2s; }
-.person-avatar { display: block; flex: 0 0 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 1px solid #ffffff38;
-  background-color: #50405a; background-repeat: no-repeat; background-size: auto 140px; background-position: left top;
+.person-avatar { display: block; flex: 0 0 40px; width: 40px; height: 40px; border-radius: 10px; overflow: hidden; border: 1px solid #ffffff38;
+  /* Four-frame horizontal sprite sheet: crop frame zero to the character's
+     face instead of showing a corner of the uncropped sheet. */
+  background-color: #50405a; background-repeat: no-repeat; background-size: auto 106px; background-position: -10px -8px;
   image-rendering: pixelated; }
 .avatar-ramin { background-image: url("./assets/ramin.png"); background-color: #a9607a; }
 .avatar-borhan { background-image: url("./assets/borhan.png"); background-color: #5b8a93; }
-.avatar-mammad { background-image: url("./assets/mammad.png"); background-color: #d0a16b; }
+.avatar-mammad { background-image: url("./assets/mammad.png"); background-color: #d0a16b; background-position-y: -2px; }
 .person-info { min-width: 0; flex: 1; }
 .person-info b { display: block; font-size: 11px; }
 .person-info small { color: #b9b9c8; font-size: 9px; }
@@ -193,7 +195,8 @@ button:focus-visible, canvas:focus-visible { outline: 3px solid var(--sun); outl
   .panel-caption { font-size: 9px; }
   .roster { gap: 4px; margin-top: 6px; }
   .roster-person { padding: 4px; }
-  .person-avatar { flex-basis: 30px; height: 30px; border-radius: 7px; background-size: auto 110px; }
+  .person-avatar { flex-basis: 30px; width: 30px; height: 30px; border-radius: 7px; background-size: auto 80px; background-position: -8px -6px; }
+  .avatar-mammad { background-position-y: -2px; }
   .person-info b { font-size: 10px; }
   .person-info small { font-size: 8px; }
   .room-tag { top: 86px; right: 9px; font-size: 10px; padding: 7px 9px; }
@@ -243,7 +246,8 @@ button:focus-visible, canvas:focus-visible { outline: 3px solid var(--sun); outl
   .panel-caption, .side-panel h2, .side-panel p { display: none; }
   .roster { display: flex; flex-direction: row; margin: 0; gap: 5px; }
   .roster-person { flex: 1 1 0; min-width: 0; padding: 4px 5px; gap: 4px; border-radius: 9px; }
-  .person-avatar { flex: 0 0 27px; height: 32px; border-radius: 7px; background-size: auto 112px; }
+  .person-avatar { flex: 0 0 27px; width: 27px; height: 32px; border-radius: 7px; background-size: auto 72px; background-position: -7px -6px; }
+  .avatar-mammad { background-position-y: -2px; }
   .person-info b { font-size: 9px; white-space: nowrap; }
   .person-info small { display: none; }
   .person-status { font-size: 14px; }
