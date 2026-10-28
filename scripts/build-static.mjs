@@ -1,21 +1,24 @@
-/** Assemble the complete GitHub Pages asset tree and fail on missing local ES modules.
- * Keep this as the single build path for both PR checks and production deploys.
+/** Assemble a clean, complete GitHub Pages artifact using Node's module parser.
+ * Static ESM imports and re-exports are validated without executing game code.
  */
-import { cp, mkdir, readdir, readFile, copyFile, stat } from 'node:fs/promises';
+import { cp, mkdir, readdir, readFile, copyFile, rm } from 'node:fs/promises';
 import { dirname, resolve, join, sep } from 'node:path';
+import { SourceTextModule } from 'node:vm';
 
 const output = resolve('dist');
+await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
+
 for (const file of ['index.html', 'style.css']) {
   await copyFile(file, join(output, file));
 }
 for (const entry of await readdir('.', { withFileTypes: true })) {
-  if (entry.isFile() && entry.name.endsWith('.js')) {
+  if (entry.isFile() && /\.(?:js|mjs)$/.test(entry.name)) {
     await copyFile(entry.name, join(output, entry.name));
   }
 }
 for (const dir of ['assets', 'lib']) {
-  await cp(dir, join(output, dir), { recursive: true, force: true });
+  await cp(dir, join(output, dir), { recursive: true });
 }
 
 const html = await readFile(join(output, 'index.html'), 'utf8');
@@ -30,19 +33,24 @@ async function verifyModule(file) {
     throw new Error('Module escapes the published directory: ' + file);
   }
   if (seen.has(absolute)) return;
-  seen.add(absolute);
-  await stat(absolute);
   const source = await readFile(absolute, 'utf8');
-  // Static, relative ES module imports used by the game. Track the entire
-  // dependency graph so a new module cannot silently disappear from Pages.
-  const imports = [...source.matchAll(/(?:^|\n)\s*import\s+(?:[^\n;]*?\s+from\s*)?["'](\.[^"']+)["']/g)];
-  for (const match of imports) {
-    await verifyModule(resolve(dirname(absolute), match[1]));
+  // Dynamic import() cannot be validated without running the page. Reject it
+  // explicitly instead of silently shipping a potentially incomplete artifact.
+  if (/\bimport\s*\(/.test(source)) {
+    throw new Error('Dynamic import() is not supported by the static Pages verifier: ' + file);
+  }
+  const parsed = new SourceTextModule(source, { identifier: absolute });
+  seen.add(absolute);
+  // The parser covers static multiline imports AND export-from declarations.
+  for (const specifier of parsed.dependencySpecifiers) {
+    if (!specifier.startsWith('./') && !specifier.startsWith('../')) {
+      throw new Error('Unbundled module import is not supported: ' + specifier);
+    }
+    await verifyModule(resolve(dirname(absolute), specifier));
   }
 }
 for (const source of sources) await verifyModule(resolve(output, source));
 
-// Fail before deploying if the Telegram bridge is omitted from the artifact.
 if (!seen.has(resolve(output, 'telegram-game.js'))) {
   throw new Error('Telegram game bridge is not reachable from the game entry point');
 }
