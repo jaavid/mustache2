@@ -14,8 +14,8 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - run: npm test
@@ -27,14 +27,9 @@ jobs:
           test -s assets/fonts/NotoSansArabic.ttf
           test -s assets/fonts/OFL.txt
           file assets/*.png
-      - name: Prepare static Pages artifact
-        run: |
-          mkdir -p dist/assets/fonts dist/lib
-          cp index.html style.css game.js scenery.js dist/
-          cp assets/*.png dist/assets/
-          cp assets/fonts/NotoSansArabic.ttf assets/fonts/OFL.txt dist/assets/fonts/
-          cp lib/logic.mjs dist/lib/
-      - uses: actions/upload-pages-artifact@v3
+      - name: Build and validate complete static Pages artifact
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: dist
   deploy:
@@ -45,4 +40,4 @@ jobs:
     needs: test
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
