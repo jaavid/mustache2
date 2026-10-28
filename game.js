@@ -115,6 +115,7 @@ function renderHud() {
     if (!row) continue;
     const status = actor.state === 'captured' ? ['گرفته شد', '✓'] :
                    actor.state === 'fleeing' ? ['در حال فرار!', '!'] : ['پنهان شده', '؟'];
+    if (row.dataset.state === actor.state) continue;
     row.dataset.state = actor.state;
     row.querySelector('.person-info small').textContent = status[0];
     row.querySelector('.person-status').textContent = status[1];
@@ -145,7 +146,7 @@ function finish(victory) {
     showOverlay('هر سه نفر سیبیل‌دار شدند!', 'هر سه شخصیت را گرفتی! امتیاز نهایی: ' + number(final) + '. آماده‌ای یک بار دیگر دنبالشـان بگردی؟', 'ALL THREE CAPTURED', 'دوباره بازی کن');
   } else {
     sound(140, .5, 'sawtooth', .025);
-    showOverlay('وقت تمام شد!', 'توانستی ' + number(caught) + ' نفر از ۳ نفر را بگیری. در دور بعدی جای مخفی‌شدن‌ها عوض می‌شود.', 'TIME IS UP', 'یک فرصت دیگر');
+    showOverlay('وقت تمام شد!', 'توانستی ' + number(caught) + ' نفر از ۳ نفر را بگیری. امتیاز: ' + number(final) + '. در دور بعدی جای مخفی‌شدن‌ها عوض می‌شود.', 'TIME IS UP', 'یک فرصت دیگر');
   }
 }
 function pauseGame() {
