@@ -65,3 +65,42 @@ test('mobile game controls and localized UI stay usable', async ({ browser }) =>
   expect(errors).toEqual([]);
   await context.close();
 });
+
+
+test('mission avatars display the first sprite-frame faces at desktop and mobile sizes', async ({ page }) => {
+  for (const viewport of [{ width: 1280, height: 800 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.locator('#start').click();
+    const portraits = await page.evaluate(async () => {
+      const ids = ['ramin', 'borhan', 'mammad'];
+      return Promise.all(ids.map(async id => {
+        const avatar = document.querySelector('.roster-person[data-character="' + id + '"] .person-avatar');
+        const css = getComputedStyle(avatar);
+        const image = new Image();
+        image.src = '/assets/' + id + '.png';
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        context.drawImage(image, 0, 0);
+        const size = parseFloat(css.backgroundSize.split(' ').at(-1));
+        const scale = size / image.naturalHeight;
+        const x = Math.round((avatar.getBoundingClientRect().width / 2 - parseFloat(css.backgroundPositionX)) / scale);
+        const y = Math.round((avatar.getBoundingClientRect().height / 2 - parseFloat(css.backgroundPositionY)) / scale);
+        const alpha = context.getImageData(x, y, 1, 1).data[3];
+        return { id, x, y, alpha, firstFrameWidth: image.naturalWidth / 4 };
+      }));
+    });
+    for (const portrait of portraits) {
+      expect(portrait.x, portrait.id + ' should sample the first animation frame').toBeLessThan(portrait.firstFrameWidth);
+      expect(portrait.x, portrait.id + ' portrait should not sample empty outer margins').toBeGreaterThan(15);
+      expect(portrait.alpha, portrait.id + ' face must be visibly painted at the avatar center').toBeGreaterThan(200);
+    }
+    await page.locator('#roster').screenshot({
+      path: 'artifacts/roster-' + viewport.width + '.png',
+      animations: 'disabled',
+    });
+  }
+});
