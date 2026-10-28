@@ -8,6 +8,7 @@ test('the farmhouse loads, starts, shoots and pauses without browser errors', as
   const font = await page.locator('body').evaluate(el => getComputedStyle(el).fontFamily);
   expect(font).toContain('Noto Sans Arabic');
   expect(await page.evaluate(() => document.fonts.check('500 14px "Noto Sans Arabic"'))).toBe(true);
+  await page.screenshot({ path: 'artifacts/mustache2-menu.png', animations: 'disabled' });
   await page.locator('#start').click();
   await expect(page.locator('#overlay')).toHaveClass(/hidden/);
   await expect(page.locator('#world')).toBeVisible();
@@ -36,6 +37,10 @@ test('mobile game controls and localized UI stay usable', async ({ browser }) =>
   await expect(page.locator('#overlayTitle')).toBeVisible();
   await page.locator('#start').click();
   await expect(page.locator('#touch')).toBeVisible();
+  const mission = await page.locator('.side-panel').boundingBox();
+  const hint = await page.locator('#hint').boundingBox();
+  expect(mission).toBeTruthy(); expect(hint).toBeTruthy();
+  expect(mission.y + mission.height).toBeLessThan(hint.y);
   await page.locator('#inspect').click();
   await page.locator('#fire').click();
   await expect(page.locator('#accuracy')).not.toContainText('—');

@@ -232,3 +232,24 @@ button:focus-visible, canvas:focus-visible { outline: 3px solid var(--sun); outl
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { animation-duration: .01ms !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
 }
+/* Compact mission strip: keep the player and the hint unobstructed on phones. */
+@media (max-width: 720px), (pointer: coarse) and (max-height: 570px) {
+  .side-panel {
+    top: 82px; left: 9px; right: 9px; width: auto; padding: 8px;
+    border-radius: 14px; background: #1b2236eb;
+  }
+  .panel-caption, .side-panel h2, .side-panel p { display: none; }
+  .roster { display: flex; flex-direction: row; margin: 0; gap: 5px; }
+  .roster-person { flex: 1 1 0; min-width: 0; padding: 4px 5px; gap: 4px; border-radius: 9px; }
+  .person-avatar { flex: 0 0 27px; height: 32px; border-radius: 7px; background-size: auto 112px; }
+  .person-info b { font-size: 9px; white-space: nowrap; }
+  .person-info small { display: none; }
+  .person-status { font-size: 14px; }
+  .room-tag { top: 149px; right: 11px; font-size: 9px; }
+  .hint { top: 192px; max-width: min(92vw, 460px); }
+}
+@media (pointer: coarse) and (max-height: 570px) {
+  .side-panel { top: 68px; }
+  .room-tag { top: 124px; }
+  .hint { top: 158px; }
+}
