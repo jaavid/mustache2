@@ -18,9 +18,15 @@ test('Ramin prioritizes reachable table cover and path avoids obstacles', () => 
   const actor = { x: 650, y: 600, behavior: PERSONALITY.ramin };
   const player = { x: 600, y: 540 };
   const spots = [
-    { x: 440, y: 620, cover: 'sofa' },
+    { x: 1300, y: 700, cover: 'sofa' },
     { x: 1200, y: 650, cover: 'table' },
   ];
+  // Both sites must survive the safety filter; absent Ramin's cover bonus,
+  // the more distant sofa is the preferred escape destination.
+  assert.ok(spots.every(spot => distance(player, spot) > 180));
+  const neutral = chooseCoverRoute({ ...actor, behavior: 'decoy' },
+    player, spots, [], () => 0);
+  assert.equal(neutral?.target.cover, 'sofa');
   const route = chooseCoverRoute(actor, player, spots, [], () => 0);
   assert.ok(route);
   assert.equal(route.target.cover, 'table');
