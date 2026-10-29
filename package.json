@@ -6,7 +6,7 @@
   "description": "Playable 2D hide-and-seek mustache launcher game",
   "scripts": {
     "build": "node --experimental-vm-modules scripts/build-static.mjs",
-    "test": "node --check game.js && node --check scenery.js && node --check lib/logic.mjs && node --test tests/*.test.mjs",
+    "test": "node --check game.js && node --check scenery.js && node --check lib/logic.mjs && node --check lib/npc-ai.mjs && node --test tests/*.test.mjs",
     "serve": "python3 -m http.server 5173"
   },
   "engines": { "node": ">=22" }
