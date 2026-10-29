@@ -113,7 +113,7 @@ function message(text, duration = 3) { toast = text; toastUntil = now + duration
 function reset() {
   player = { x: 320, y: 452, vx: 0, vy: 0, angle: 0 };
   // Ramin begins at one of the under-table spots; the other two start apart.
-  const tableStart = uniqueSpots(spots.filter(s => s.cover === 'table'), 1)[0];
+  const tableStart = uniqueSpots(spots.filter(s => s.cover === 'table' && dist(s, player) > 200), 1)[0];
   const remaining = uniqueSpots(spots.filter(s => s !== tableStart && dist(s, tableStart) > 120), 2);
   const starts = [tableStart, ...remaining];
   actors = characterInfo.map((info, i) => ({
