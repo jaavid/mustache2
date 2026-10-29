@@ -1,6 +1,9 @@
 # Mustache2 — Godot development build
 
-Godot **4.5.2**, GDScript, Compatibility renderer; single-threaded web export.
+Model and touch suites validated with Godot **4.7.2 stable**. Web export built with matching 4.7.2 templates; browser boot verified locally.
+See [WEB_OPTIMIZATION.md](WEB_OPTIMIZATION.md) for upgrade, compression and custom-template steps.
+
+ GDScript, Compatibility renderer; single-threaded web export.
 This is a separate local development version in `godot/`. The existing Canvas
 release, deployment workflow, bot, backend, records and wallet are not modified.
 
@@ -106,3 +109,13 @@ rights (see `../ASSETS.md`). Noto Sans Arabic is SIL OFL 1.1 (`assets/OFL.txt`, 
 copied to the web build). The environment and inline loading emblem are drawn in
 code; no external asset packs or new commercial assets are bundled. Godot is MIT
 licensed: https://godotengine.org/license/.
+
+## GitHub Pages preview
+
+The Pages workflow builds the pinned 4.7.2 engine/template pair and runs both
+Godot regression suites before assembling a single artifact. The existing Canvas
+client stays at `/mustache2/`; the development preview is at `/mustache2/godot/`.
+The preview ignores Telegram session parameters and disables remote scoring and
+ranking, so testing cannot submit scores to the production backend. Bot URLs
+and registration are unchanged. A failing preview build blocks the new deployment;
+the previously deployed Pages site stays available.

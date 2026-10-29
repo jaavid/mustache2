@@ -3,9 +3,9 @@ set -eu
 cd "$(dirname "$0")"
 : "${GODOT:?Set GODOT to the Godot 4.5.2 executable path}"
 test_log=$(mktemp)
-trap 'rm -f "$test_log"' EXIT HUP INT TERM
+trap 'rm -f "$test_log" "$test_log.engine"' EXIT HUP INT TERM
 for suite in smoke_test.gd tests/input_smoke.gd; do
-  if ! "$GODOT" --headless --path . --script "$suite" --quit-after 600 > "$test_log" 2>&1; then
+  if ! "$GODOT" --headless --log-file "$test_log.engine" --path . --script "$suite" --quit-after 600 > "$test_log" 2>&1; then
     cat "$test_log"
     exit 1
   fi

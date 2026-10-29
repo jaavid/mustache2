@@ -29,6 +29,30 @@ jobs:
           file assets/*.png
       - name: Build and validate complete static Pages artifact
         run: npm run build
+      - name: Install pinned Godot web toolchain
+        env:
+          GODOT_VERSION: 4.7.2
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/godot" godot/.tools
+          release="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl --fail --location --retry 3 "$release/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip" -o "$RUNNER_TEMP/godot/engine.zip"
+          curl --fail --location --retry 3 "$release/Godot_v${GODOT_VERSION}-stable_export_templates.tpz" -o "$RUNNER_TEMP/godot/templates.tpz"
+          unzip -q "$RUNNER_TEMP/godot/engine.zip" -d "$RUNNER_TEMP/godot"
+          unzip -p "$RUNNER_TEMP/godot/templates.tpz" templates/web_nothreads_release.zip > godot/.tools/web_nothreads_release.zip
+          unzip -p "$RUNNER_TEMP/godot/templates.tpz" templates/web_nothreads_debug.zip > godot/.tools/web_nothreads_debug.zip
+          printf '%s\n' "$GODOT_VERSION" > godot/.tools/template-version.txt
+          echo "GODOT=$RUNNER_TEMP/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64" >> "$GITHUB_ENV"
+      - name: Build and test Godot preview
+        run: ./godot/build-web.sh
+      - name: Add isolated Godot preview to Pages artifact
+        run: |
+          mkdir -p dist/godot
+          cp -R godot/web/. dist/godot/
+          test -s dist/index.html
+          test -s dist/godot/index.html
+          test -s dist/godot/index.wasm
+          test -s dist/godot/index.pck
       - uses: actions/upload-pages-artifact@v5
         with:
           path: dist

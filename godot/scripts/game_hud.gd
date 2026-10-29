@@ -8,9 +8,9 @@ signal sound_toggled
 signal motion_toggled
 const Type = preload("res://scripts/typography.gd")
 const Text = preload("res://scripts/game_text.gd")
-const VirtualJoystick = preload("res://scripts/virtual_joystick.gd")
+const MustacheJoystick = preload("res://scripts/virtual_joystick.gd")
 const Art = preload("res://scripts/character_art.gd")
-var joystick: VirtualJoystick
+var joystick: MustacheJoystick
 var keyboard_legend: Label
 var ui: Control
 var status: Label
@@ -176,7 +176,7 @@ func build_ui() -> void:
 		row.add_child(mark)
 		roster_marks.append(mark)
 		roster.append(card)
-	joystick = VirtualJoystick.new()
+	joystick = MustacheJoystick.new()
 	ui.add_child(joystick)
 	keyboard_legend = make_label("حرکت: \u2066WASD\u2069\nدویدن: \u2066SHIFT\u2069", 14, 600)
 	search_button = make_button("بگرد", func(): investigate_requested.emit())

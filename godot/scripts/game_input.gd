@@ -5,8 +5,8 @@ signal fire_requested(screen_position: Vector2)
 signal auto_fire_requested
 signal pause_requested
 signal aim_changed(screen_position: Vector2)
-const VirtualJoystick = preload("res://scripts/virtual_joystick.gd")
-var joystick: VirtualJoystick
+const MustacheJoystick = preload("res://scripts/virtual_joystick.gd")
+var joystick: MustacheJoystick
 var enabled := false
 
 

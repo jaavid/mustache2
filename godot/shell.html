@@ -32,9 +32,16 @@ $GODOT_HEAD_INCLUDE
 <script src="$GODOT_URL"></script>
 <script type="module">
 import { createTelegramGameBridge } from './telegram-game.js';
+const preview = location.pathname.includes('/godot/');
 const local = ['localhost','127.0.0.1','::1'].includes(location.hostname);
+// Load the official game proxy only for Telegram game sessions.
+if (!local && !preview && /^[0-9a-f]{64}$/.test(new URLSearchParams(location.search).get('tg_session') || '')) {
+  const proxy = document.createElement('script');
+  proxy.src = 'https://telegram.org/js/games.js';
+  document.body.appendChild(proxy);
+}
 const bridge = createTelegramGameBridge({
-  location: local ? {search:''} : location,
+  location: (local || preview) ? {search:''} : location,
   onStatus(text){document.getElementById('telegram-status').textContent=text;},
   onLeaderboard(data){
     const list=document.getElementById('ranks');list.replaceChildren();
