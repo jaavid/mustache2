@@ -13,6 +13,14 @@ This repository is a static HTML5 game: open `index.html` with a local static se
 - **Mobile**: virtual movement pad and tap-to-shoot.
 - Find all three characters before 3 minutes expire. Once spotted, they flee and can hide again. A mustache must actually hit the **upper lip** to catch a character.
 
+### Independent NPC personalities
+
+- **Ramin — cover seeker:** starts near a table, favors safe table/sofa edges, and hides again only once he has physically reached cover and the player is far enough away.
+- **Borhan — flanker:** circles around the hunter using tangential waypoints and recalculates routes around walls/furniture; after a sufficiently long chase he can escape into hiding.
+- **Mammad — noise trickster:** while uncaught, periodically plants a short-lived fake sound clue in a different nearby location. The room hint and pulsing `تق!` mark lure you to a false hiding spot. Inspect it with **E** or the mobile search button to dismiss it. It never counts as a capture or alters scoring.
+
+Behavior selection is collision-aware and uses the existing grid-based navigation, including fallback when a flank is blocked. The policies are in `lib/npc-ai.mjs` and have deterministic regression tests in `tests/npc-ai.test.mjs`. No extra network calls or Telegram permissions are needed.
+
 ## Technical approach
 
 Zero runtime dependencies. HTML/CSS and Canvas 2D, procedural room/furniture drawing (including a dedicated scenery module), 2D collision and grid-based pursuit/evasion, simulated mustache projectiles, original character PNG sprite sheets, Web Audio SFX. The new UI ships with a locally hosted **Noto Sans Arabic variable font (SIL OFL 1.1)** and accessible status indicators. Works offline when served with local assets. Deliberately separate from the original Phaser/Telegram/wallet stack.
@@ -36,7 +44,7 @@ Settings → Pages → Deploy from a branch → `main` / `(root)`. Alternatively
 
 ## Scope and limitations
 
-This is a playable **v0.2 single-level prototype**. It uses a stylized top-down house with upright 2D character cutouts rather than six-direction walking sprites. It is single-player and local: there is no Telegram leaderboard, online multiplayer or token reward. Pathfinding and hit detection are intentionally simple and will be tuned after playtesting.
+This is a playable **v0.2 single-level prototype**. It uses a stylized top-down house with upright 2D character cutouts rather than six-direction walking sprites. It is single-player and local: there is no Telegram leaderboard, online multiplayer or token reward. Pathfinding and hit detection remain intentionally lightweight for the browser and Telegram; NPC decision-making is personality-driven and can be tuned after playtesting.
 
 ## Official Telegram Games integration
 
