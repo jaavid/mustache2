@@ -337,10 +337,9 @@ function simulate(dt) {
       continue;
     }
     actor.refresh -= dt;
-    if (actor.refresh <= 0 || !actor.target || dist(actor, actor.target) < 35 ||
-        (actor.path.length === 0 && dist(actor, actor.target) > 35)) {
-      chooseEscape(actor);
-    }
+    // Keep path searches time-bounded even when furniture blocks every candidate.
+    // Re-evaluate at a short interval instead of recalculating BFS each frame.
+    if (actor.refresh <= 0) chooseEscape(actor);
     let waypoint = actor.path[0];
     if (!waypoint) waypoint = actor.target;
     if (!waypoint) continue;
