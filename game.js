@@ -110,6 +110,7 @@ function sound(frequency = 300, length = .11, shape = 'triangle', volume = .035)
   } catch {}
 }
 function message(text, duration = 3) { toast = text; toastUntil = now + duration; $('hintText').textContent = text; $('hint').style.opacity = 1; }
+/** Start a new round with separated, reachable initial hideouts and reset decoys. */
 function reset() {
   player = { x: 320, y: 452, vx: 0, vy: 0, angle: 0 };
   // Ramin begins at one of the under-table spots; the other two start apart.
@@ -129,6 +130,7 @@ function reset() {
   phase = 'playing'; nextHudAt = 0; $('overlay').classList.add('hidden'); message('سه نفر داخل خانه مخفی‌اند؛ نزدیک وسایل بگرد!', 6);
   renderHud(); canvas.focus();
 }
+/** Refresh game timer, search hints and personality-specific NPC statuses. */
 function renderHud() {
   $('caught').textContent = number(caught) + ' / ۳';
   const pct = Math.max(0, Math.min(100, clock / 180 * 100));
@@ -217,6 +219,7 @@ function screenToWorld(x, y) { return { x: x + camera.x - w / 2, y: y + camera.y
 function updatePointer(e) { const r = canvas.getBoundingClientRect(); pointer.x = e.clientX - r.left; pointer.y = e.clientY - r.top; pointer.active = true; }
 canvas.addEventListener('pointermove', updatePointer);
 canvas.addEventListener('pointerdown', e => { if (phase !== 'playing') return; updatePointer(e); shoot(screenToWorld(pointer.x, pointer.y)); });
+/** Reveal the nearest real hider or dispel Mammad's nearby fake clue. */
 function inspect() {
   if (phase !== 'playing') return;
   const hidden = actors.filter(a => a.state === 'hidden' && dist(a, player) < 155)
@@ -236,6 +239,7 @@ function inspect() {
   }
 }
 $('inspect').addEventListener('click', inspect);
+/** Transition a hidden NPC into pursuit when the player finds it. */
 function reveal(actor) {
   if (actor.state !== 'hidden') return;
   actor.state = 'fleeing'; actor.refresh = 0; actor.chaseTime = 0;
@@ -270,6 +274,7 @@ function slide(entity, dx, dy, radius = 16) {
   if (!isSolid(entity.x + dx, entity.y, radius)) entity.x += dx;
   if (!isSolid(entity.x, entity.y + dy, radius)) entity.y += dy;
 }
+/** Assign a navigable cover/flank route according to the NPC personality. */
 function chooseEscape(a) {
   const route = a.behavior === 'flank'
     ? (chooseFlankRoute(a, player, obstacles) || chooseCoverRoute(a, player, spots, obstacles))
@@ -285,6 +290,7 @@ function chooseEscape(a) {
   a.refresh = a.behavior === 'flank' ? 1.4 : 2.5;
 }
 
+/** Spawn a time-limited sound lure away from uncaught NPCs and nearby player. */
 function makeFalseNoise(actor) {
   if (decoys.length >= 2) return;
   const others = actors.filter(a => a !== actor && a.state === 'hidden');
@@ -297,6 +303,7 @@ function makeFalseNoise(actor) {
   message('تق تق! صدای مشکوکی از ' + (room?.name || 'راهرو') + ' می‌آید…', 3.5);
   sound(260, .14, 'triangle', .025);
 }
+/** Advance one gameplay tick, including player movement, AI, scoring and decoys. */
 function simulate(dt) {
   clock -= dt; if (clock <= 0) { clock = 0; finish(false); return; }
   let mx = (pressed.has('d') || pressed.has('arrowright') ? 1 : 0) - (pressed.has('a') || pressed.has('arrowleft') ? 1 : 0) + joystick.x;
@@ -451,6 +458,7 @@ function drawMustache(x,y,scale=1,rotation=0,color='#211b2b') {
   ctx.bezierCurveTo(11,12,15,-2,22,0);ctx.bezierCurveTo(16,-8,8,-6,0,3);ctx.closePath();ctx.fill();
   ctx.restore();
 }
+/** Draw animated visual sound clues without turning them into capture targets. */
 function renderFalseNoises() {
   for (const d of decoys) {
     const strength = clamp(d.ttl / 2, 0, 1);
@@ -469,6 +477,7 @@ function renderFalseNoises() {
   }
 }
 
+/** Render a captured or fleeing character, hiding undiscovered NPCs. */
 function renderActor(a) {
   if(a.state === 'hidden') {
     if (dist(player,a)<205) {
@@ -526,6 +535,7 @@ function renderLight() {
   g.addColorStop(0,'#ffe9b41a');g.addColorStop(1,'#ffe9b400');
   ctx.fillStyle=g;ctx.fillRect(x-radius,y-radius,radius*2,radius*2);
 }
+/** Draw the scene in world and screen space, including decoy effects. */
 function renderFrame() {
   updateCamera();
   ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);ctx.clearRect(0,0,w,h);
