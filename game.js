@@ -1,4 +1,5 @@
-import { clamp, faceHit, blocked, uniqueSpots, gridPath } from './lib/logic.mjs';
+import { clamp, faceHit, blocked, uniqueSpots } from './lib/logic.mjs';
+import { PERSONALITY, chooseCoverRoute, chooseFlankRoute, chooseNoiseSpot, canRehide } from './lib/npc-ai.mjs';
 import { drawFloorDetail, drawSetDressing } from './scenery.js';
 import { createTelegramGameBridge } from './telegram-game.js';
 
@@ -40,13 +41,17 @@ const furniture = [
   { x: 1323, y: 830, w: 72, h: 69, type: 'desk', label: 'DESK', color: '#a7856a' }
 ];
 const obstacles = [...walls, ...furniture];
+// Hiding points are reachable at furniture edges; NPCs never walk through solid tables.
 const spots = [
-  { x: 384, y: 299, name: 'کمد اتاق نشیمن' },
-  { x: 735, y: 337, name: 'تخت اتاق خواب' },
-  { x: 1225, y: 319, name: 'میز آشپزخانه' },
-  { x: 261, y: 835, name: 'مبل پذیرایی' },
-  { x: 881, y: 792, name: 'کتابخانه' },
-  { x: 1264, y: 834, name: 'صندلی اتاق' }
+  { x: 384, y: 299, name: 'کمد اتاق نشیمن', cover: 'closet' },
+  { x: 735, y: 337, name: 'تخت اتاق خواب', cover: 'bed' },
+  { x: 1225, y: 319, name: 'میز آشپزخانه', cover: 'table' },
+  { x: 261, y: 835, name: 'مبل پذیرایی', cover: 'sofa' },
+  { x: 881, y: 792, name: 'کتابخانه', cover: 'closet' },
+  { x: 1264, y: 834, name: 'صندلی اتاق', cover: 'desk' },
+  { x: 367, y: 459, name: 'زیر میز نشیمن', cover: 'table' },
+  { x: 1217, y: 288, name: 'زیر میز آشپزخانه', cover: 'table' },
+  { x: 397, y: 902, name: 'زیر میز پذیرایی', cover: 'table' },
 ];
 const rooms = [
   { x: 95, y: 95, w: 421, h: 422, name: 'اتاق نشیمن', c: '#393c58' },
@@ -74,7 +79,7 @@ $('telegramPanel').hidden = !telegramBridge.enabled;
 $('telegramShare').addEventListener('click', () => telegramBridge.shareScore());
 $('telegramRank').addEventListener('click', () => { void telegramBridge.leaderboard(); });
 let phase = 'menu', player = { x: 260, y: 435, vx: 0, vy: 0, angle: 0 };
-let actors = [], projectiles = [], effects = [], clock = 180, score = 0, fired = 0, caught = 0, lastShot = 0;
+let actors = [], projectiles = [], effects = [], decoys = [], clock = 180, score = 0, fired = 0, caught = 0, lastShot = 0;
 let w = innerWidth, h = innerHeight, pixelRatio = 1, lastFrame = 0, now = 0, camera = { x: 0, y: 0 };
 let pointer = { x: w / 2, y: h / 2, active: false };
 let toast = '', toastUntil = 0, audio = null, mute = false;
@@ -107,13 +112,19 @@ function sound(frequency = 300, length = .11, shape = 'triangle', volume = .035)
 function message(text, duration = 3) { toast = text; toastUntil = now + duration; $('hintText').textContent = text; $('hint').style.opacity = 1; }
 function reset() {
   player = { x: 320, y: 452, vx: 0, vy: 0, angle: 0 };
-  const shuffled = uniqueSpots(spots, 3);
+  // Ramin begins at one of the under-table spots; the other two start apart.
+  const tableStart = uniqueSpots(spots.filter(s => s.cover === 'table'), 1)[0];
+  const remaining = uniqueSpots(spots.filter(s => s !== tableStart && dist(s, tableStart) > 120), 2);
+  const starts = [tableStart, ...remaining];
   actors = characterInfo.map((info, i) => ({
-    ...info, x: shuffled[i].x, y: shuffled[i].y, home: shuffled[i], state: 'hidden',
-    speed: [150, 165, 138][i], dir: 1, path: [], target: null, refresh: 0,
-    wave: rand(0, Math.PI * 2), visibleFor: 0, escapeCount: 0
+    ...info, behavior: PERSONALITY[info.id],
+    x: starts[i].x, y: starts[i].y, home: starts[i], state: 'hidden',
+    speed: [160, 178, 145][i], dir: 1, path: [], target: null, refresh: 0,
+    wave: rand(0, Math.PI * 2), chaseTime: 0, orbitDirection: 1,
+    noiseCountdown: rand(6, 9), lastNoiseSpot: null,
   }));
-  clock = 180; score = 0; fired = 0; caught = 0; projectiles = []; effects = []; lastShot = 0;
+  clock = 180; score = 0; fired = 0; caught = 0; projectiles = []; effects = []; decoys = []; lastShot = 0;
+  document.querySelectorAll('.roster-person').forEach(row => { row.dataset.state = ''; });
   telegramBridge.startRound();
   phase = 'playing'; nextHudAt = 0; $('overlay').classList.add('hidden'); message('سه نفر داخل خانه مخفی‌اند؛ نزدیک وسایل بگرد!', 6);
   renderHud(); canvas.focus();
@@ -127,12 +138,16 @@ function renderHud() {
                                player.y >= r.y && player.y < r.y + r.h);
   $('roomName').textContent = room?.name || 'راهرو';
   const nearHidden = actors.some(a => a.state === 'hidden' && dist(a, player) < 155);
-  $('inspectPrompt').classList.toggle('active', phase === 'playing' && nearHidden);
+  const nearNoise = decoys.some(d => dist(d, player) < 140);
+  $('inspectPrompt').classList.toggle('active', phase === 'playing' && (nearHidden || nearNoise));
   for (const actor of actors) {
     const row = document.querySelector('.roster-person[data-character="' + actor.id + '"]');
     if (!row) continue;
+    const fleeingLabel = actor.behavior === 'cover' ? 'به سمت میز فرار می‌کند!' :
+                         actor.behavior === 'flank' ? 'دورت می‌زند!' : 'حواست را پرت می‌کند!';
     const status = actor.state === 'captured' ? ['گرفته شد', '✓'] :
-                   actor.state === 'fleeing' ? ['در حال فرار!', '!'] : ['پنهان شده', '؟'];
+                   actor.state === 'fleeing' ? [fleeingLabel, '!'] :
+                   [actor.behavior === 'cover' ? 'زیر وسایل پنهان است' : 'پنهان شده', '؟'];
     if (row.dataset.state === actor.state) continue;
     row.dataset.state = actor.state;
     row.querySelector('.person-info small').textContent = status[0];
@@ -204,14 +219,27 @@ canvas.addEventListener('pointermove', updatePointer);
 canvas.addEventListener('pointerdown', e => { if (phase !== 'playing') return; updatePointer(e); shoot(screenToWorld(pointer.x, pointer.y)); });
 function inspect() {
   if (phase !== 'playing') return;
-  const hidden = actors.filter(a => a.state === 'hidden').sort((a,b) => dist(a,player) - dist(b,player));
-  if (hidden.length && dist(hidden[0], player) < 155) reveal(hidden[0]);
-  else { message('اینجا کسی نیست؛ سراغ مبل‌ها و کمدهای دیگر برو.', 2); sound(180,.08); }
+  const hidden = actors.filter(a => a.state === 'hidden' && dist(a, player) < 155)
+    .sort((a,b) => dist(a,player) - dist(b,player));
+  const noises = decoys.filter(d => dist(d, player) < 140)
+    .sort((a,b) => dist(a,player) - dist(b,player));
+  if (hidden.length && (!noises.length || dist(hidden[0], player) < dist(noises[0], player))) {
+    reveal(hidden[0]);
+  } else if (noises.length) {
+    const noise = noises[0];
+    decoys.splice(decoys.indexOf(noise), 1);
+    spawnEffect(noise.x, noise.y, '#f8bb7b', 12);
+    message('این صدا ساختگی بود! ممد گولت زد؛ جای دیگری را بگرد.', 3.2);
+    sound(135, .2, 'triangle');
+  } else {
+    message('اینجا کسی نیست؛ سراغ مبل‌ها و کمدهای دیگر برو.', 2); sound(180,.08);
+  }
 }
 $('inspect').addEventListener('click', inspect);
 function reveal(actor) {
   if (actor.state !== 'hidden') return;
-  actor.state = 'fleeing'; actor.refresh = 0; actor.visibleFor = 1.3;
+  actor.state = 'fleeing'; actor.refresh = 0; actor.chaseTime = 0;
+  actor.target = null; actor.path = [];
   message(actor.name + ' را پیدا کردی! قبل از فرار روی لبش شلیک کن!', 4);
   spawnEffect(actor.x, actor.y - 55, '#ffe599', 16); sound(540, .22);
 }
@@ -243,11 +271,31 @@ function slide(entity, dx, dy, radius = 16) {
   if (!isSolid(entity.x, entity.y + dy, radius)) entity.y += dy;
 }
 function chooseEscape(a) {
-  const possible = spots.filter(s => dist(s, player) > 310 && dist(s, a) > 130 && !isSolid(s.x,s.y,17));
-  const pool = possible.length ? possible : spots.filter(s => dist(s,a) > 130 && !isSolid(s.x,s.y,17));
-  a.target = pool[Math.floor(Math.random() * pool.length)] || { x: 1270, y: 850 };
-  a.path = gridPath(a, a.target, obstacles);
-  a.refresh = 1.7;
+  const route = a.behavior === 'flank'
+    ? (chooseFlankRoute(a, player, obstacles) || chooseCoverRoute(a, player, spots, obstacles))
+    : chooseCoverRoute(a, player, spots, obstacles);
+  if (route) {
+    a.target = route.target;
+    a.path = route.path;
+    if (route.orbitDirection) a.orbitDirection = route.orbitDirection;
+  } else {
+    // Retry shortly rather than walking through furniture or a wall.
+    a.target = null; a.path = [];
+  }
+  a.refresh = a.behavior === 'flank' ? 1.4 : 2.5;
+}
+
+function makeFalseNoise(actor) {
+  if (decoys.length >= 2) return;
+  const others = actors.filter(a => a !== actor && a.state === 'hidden');
+  const spot = chooseNoiseSpot(actor, player, spots, others);
+  if (!spot) return;
+  actor.lastNoiseSpot = spot;
+  decoys.push({ x: spot.x, y: spot.y, ttl: 8, life: 8, wave: rand(0, 6) });
+  const room = rooms.find(r => spot.x >= r.x && spot.x < r.x + r.w &&
+    spot.y >= r.y && spot.y < r.y + r.h);
+  message('تق تق! صدای مشکوکی از ' + (room?.name || 'راهرو') + ' می‌آید…', 3.5);
+  sound(260, .14, 'triangle', .025);
 }
 function simulate(dt) {
   clock -= dt; if (clock <= 0) { clock = 0; finish(false); return; }
@@ -263,26 +311,42 @@ function simulate(dt) {
     const aim = screenToWorld(pointer.x, pointer.y);
     player.angle = Math.atan2(aim.y - player.y, aim.x - player.x);
   } else if (mag > .2) player.angle = Math.atan2(my, mx);
+  for (let i = decoys.length - 1; i >= 0; i--) {
+    decoys[i].ttl -= dt;
+    if (decoys[i].ttl <= 0) decoys.splice(i, 1);
+  }
   for (const actor of actors) {
     actor.wave += dt * 5;
+    if (actor.id === 'mammad' && actor.state !== 'captured') {
+      actor.noiseCountdown -= dt;
+      if (actor.noiseCountdown <= 0) {
+        makeFalseNoise(actor);
+        actor.noiseCountdown = rand(9, 13);
+      }
+    }
     if (actor.state === 'hidden') {
       if (dist(actor, player) < 78) reveal(actor);
       continue;
     }
     if (actor.state !== 'fleeing') continue;
+    actor.chaseTime += dt;
+    if (canRehide(actor, player)) {
+      actor.state = 'hidden'; actor.home = actor.target;
+      actor.path = []; actor.target = null;
+      message(actor.name + ' پشت وسایل دوباره قایم شد! پیدایش کن.', 2.5);
+      continue;
+    }
     actor.refresh -= dt;
-    if (actor.refresh <= 0 || !actor.target || dist(actor, actor.target) < 50 || actor.path.length === 0) {
-      if (dist(actor, player) > 330 && actor.escapeCount > 0 && actor.target && dist(actor, actor.target) < 90) {
-        actor.state = 'hidden'; actor.home = actor.target; actor.x = actor.home.x; actor.y = actor.home.y;
-        message(actor.name + ' دوباره قایم شد! پیدایش کن.', 2.5);
-        continue;
-      }
-      chooseEscape(actor); actor.escapeCount++;
+    if (actor.refresh <= 0 || !actor.target || dist(actor, actor.target) < 35 ||
+        (actor.path.length === 0 && dist(actor, actor.target) > 35)) {
+      chooseEscape(actor);
     }
     let waypoint = actor.path[0];
     if (!waypoint) waypoint = actor.target;
     if (!waypoint) continue;
-    if (dist(actor, waypoint) < 16 && actor.path.length) { actor.path.shift(); waypoint = actor.path[0] || actor.target; }
+    if (dist(actor, waypoint) < 16 && actor.path.length) {
+      actor.path.shift(); waypoint = actor.path[0] || actor.target;
+    }
     if (!waypoint) continue;
     const dx = waypoint.x - actor.x, dy = waypoint.y - actor.y, length = Math.hypot(dx,dy) || 1;
     const moveX = dx / length * actor.speed * dt, moveY = dy / length * actor.speed * dt;
@@ -301,6 +365,7 @@ function simulate(dt) {
         const face = lip(a);
         if (faceHit(p.x, p.y, face.x, face.y, 17, 12)) {
           a.state = 'captured'; a.path = []; caught++; score += 1000 + Math.round(clock * 3);
+          if (a.id === 'mammad') decoys = [];
           destroyed = true; spawnEffect(face.x,face.y,'#ffdd80',26);
           message('عالی! ' + a.name + ' سیبیل‌دار شد! ' + number(3 - caught) + ' نفر مانده.', 4);
           sound(830,.3,'sine',.055); renderHud();
@@ -387,6 +452,24 @@ function drawMustache(x,y,scale=1,rotation=0,color='#211b2b') {
   ctx.bezierCurveTo(11,12,15,-2,22,0);ctx.bezierCurveTo(16,-8,8,-6,0,3);ctx.closePath();ctx.fill();
   ctx.restore();
 }
+function renderFalseNoises() {
+  for (const d of decoys) {
+    const strength = clamp(d.ttl / 2, 0, 1);
+    const pulse = (now + d.wave) % 1.5 / 1.5;
+    ctx.save();
+    ctx.globalAlpha = strength * (1 - pulse * .75);
+    ctx.strokeStyle = '#ffd685';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(d.x, d.y, 17 + pulse * 46, 0, Math.PI * 2); ctx.stroke();
+    ctx.globalAlpha = strength * .85;
+    ctx.fillStyle = '#ffe5a8';
+    ctx.font = '800 19px "Noto Sans Arabic", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('تق!', d.x, d.y - 24);
+    ctx.restore();
+  }
+}
+
 function renderActor(a) {
   if(a.state === 'hidden') {
     if (dist(player,a)<205) {
@@ -450,6 +533,7 @@ function renderFrame() {
   ctx.translate(w/2-camera.x,h/2-camera.y);
   renderHouse();
   renderLight();
+  renderFalseNoises();
   const sorted=actors.slice().sort((a,b)=>a.y-b.y);
   for (const a of sorted) renderActor(a);
   renderPlayer();
