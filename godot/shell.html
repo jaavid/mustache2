@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#111e29">
+<title>Mustache2 — شکار سیبیل</title>
+<style>
+@font-face{font-family:Noto;src:url('./NotoSansArabic.ttf') format('truetype');font-display:swap;font-style:normal;font-weight:100 900}
+*{box-sizing:border-box}html{font-synthesis:none}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#111628;color:#fff4dc;font-family:Noto,Tahoma,sans-serif}button{font:inherit}button:focus-visible,canvas:focus-visible{outline:3px solid #f5ce7c;outline-offset:-3px}#canvas{display:block;touch-action:none;width:100%;height:100%}#loading{position:fixed;inset:0;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 42%,#352940 0,#111628 65%);z-index:4;padding:24px}#loading[hidden]{display:none}.card{width:min(100%,430px);text-align:center}.eyebrow{font-size:12px;letter-spacing:.24em;color:#b9c6bd;direction:ltr}.emblem{width:126px;height:106px;margin:26px auto 10px;display:grid;place-items:center;background:#ff6fa7;border-radius:36% 44% 38% 46%;box-shadow:0 12px 0 #0002;transform:rotate(-5deg)}.emblem svg{width:100px;height:60px;transform:rotate(5deg)}h1{font-size:44px;margin:16px 0 0;font-weight:900}h2{font-size:18px;font-weight:500;color:#b8c9bf;margin:0 0 32px}progress{display:block;width:100%;height:8px;border:0;border-radius:8px;overflow:hidden;background:#fff1;accent-color:#f5ce7c}progress::-webkit-progress-bar{background:#fff1}progress::-webkit-progress-value{background:#f5ce7c;border-radius:8px}.meta{font-weight:600;display:flex;justify-content:space-between;color:#c8d2c9;font-size:13px;margin-top:12px}.tip{font-weight:500;font-size:14px;line-height:2;color:#b7c6bf;margin-top:34px}.cast{display:flex;justify-content:center;gap:28px;margin-top:24px;color:#dfc399;font-size:14px}#error{color:#ffd8ce;line-height:1.9;white-space:pre-line}#retry{background:#f5ce7c;color:#17252a;border:0;border-radius:10px;padding:12px 28px;margin-top:16px;cursor:pointer}#telegram{position:fixed;top:158px;left:12px;z-index:2;background:#142431eF;padding:8px 12px;border:1px solid #68757b;border-radius:12px;max-width:min(360px,75vw);font-size:13px}#telegram[hidden]{display:none}#telegram button{background:#29424b;color:#f6ead2;border:1px solid #6e8186;border-radius:7px;padding:6px 10px;margin:3px}#telegram ol{max-height:35vh;overflow:auto;padding-right:24px}#telegram-status{margin:6px 0}noscript{position:fixed;inset:25%;z-index:10;background:#172733;padding:24px;text-align:center}@media(prefers-reduced-motion:reduce){.emblem{transform:none}.emblem svg{transform:none}}
+.cast>div{display:grid;justify-items:center;gap:8px}.cast b{font-weight:800}.portrait{display:block;width:48px;height:48px;border-radius:12px;border:1px solid #ffffff38;background-repeat:no-repeat;background-size:auto 125px;background-position:-12px -9px;image-rendering:pixelated}.portrait-ramin{background-color:#a9607a;background-image:url(./ramin.png)}.portrait-borhan{background-color:#5b8a93;background-image:url(./borhan.png)}.portrait-mammad{background-color:#d0a16b;background-image:url(./mammad.png);background-position-y:-2px}
+</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+<canvas id="canvas" tabindex="0" aria-label="بازی قایم‌باشک؛ حرکت با جهت‌ها، جست‌وجو با E، شلیک با Space و توقف با P">برای بازی به مرورگر سازگار با Canvas نیاز داری.</canvas>
+<section id="loading" aria-label="بارگذاری بازی">
+<div class="card">
+<div class="eyebrow">THE GREAT MUSTACHE HUNT</div>
+<div class="emblem" aria-hidden="true"><svg viewBox="0 0 120 70"><path fill="#18232d" d="M60 31C44 9 30 47 8 24c-4 27 32 40 52 17 20 23 56 10 52-17C90 47 76 9 60 31Z"/></svg></div>
+<h1>شکار سیبیل</h1><h2>سه نفر، سه سیبیل!</h2>
+<progress id="progress" aria-label="پیشرفت دریافت فایل‌های بازی"></progress>
+<div class="meta"><span id="stage" role="status">در حال آماده‌سازی بازی…</span><span id="percent"></span></div>
+<div id="error" role="alert" hidden></div><button id="retry" hidden>دوباره تلاش کن</button>
+<p class="tip">قبل از پایان وقت، هر سه نفر را پیدا کن.<br>بگرد و کشف کن · دنبالشون بدو · روی لب بزن!</p>
+<div class="cast"><div><span class="portrait portrait-ramin" role="img" aria-label="رامین"></span><b>رامین</b></div><div><span class="portrait portrait-borhan" role="img" aria-label="برهان"></span><b>برهان</b></div><div><span class="portrait portrait-mammad" role="img" aria-label="ممد"></span><b>ممد</b></div></div>
+</div>
+</section>
+<aside id="telegram" hidden aria-label="امتیاز تلگرام"><details><summary>رتبه‌بندی سیبیل ۲</summary><p id="telegram-status" role="status"></p><button id="ranking">رتبه‌بندی سیبیل ۲</button><button id="share">اشتراک رکورد در تلگرام</button><ol id="ranks"></ol></details></aside>
+<noscript>برای اجرای بازی، JavaScript مرورگر باید فعال باشد.</noscript>
+<script src="$GODOT_URL"></script>
+<script type="module">
+import { createTelegramGameBridge } from './telegram-game.js';
+const local = ['localhost','127.0.0.1','::1'].includes(location.hostname);
+const bridge = createTelegramGameBridge({
+  location: local ? {search:''} : location,
+  onStatus(text){document.getElementById('telegram-status').textContent=text;},
+  onLeaderboard(data){
+    const list=document.getElementById('ranks');list.replaceChildren();
+    for(const player of (data?.top||[]).slice(0,10)){
+      const item=document.createElement('li');item.textContent=player.name+' — '+Number(player.score).toLocaleString('fa-IR');list.append(item);
+    }
+  }
+});
+document.getElementById('telegram').hidden=!bridge.enabled;
+document.getElementById('ranking').addEventListener('click',()=>bridge.leaderboard());
+document.getElementById('share').addEventListener('click',()=>bridge.shareScore());
+window.mustachePlatform={
+  call(action,payload){if(action==='start')bridge.startRound();if(action==='finish')void bridge.finishRound(payload);},
+  sync(){if(typeof FS!=='undefined'&&FS.syncfs)FS.syncfs(false,()=>{});}
+};
+</script>
+<script>
+const engine = new Engine($GODOT_CONFIG);
+const loading=document.getElementById('loading');
+const progress=document.getElementById('progress');
+const stage=document.getElementById('stage');
+const percent=document.getElementById('percent');
+function failure(error){
+  stage.textContent='بازی بارگذاری نشد';
+  document.getElementById('error').hidden=false;
+  document.getElementById('error').textContent='ارتباط اینترنت یا پشتیبانی WebGL 2 مرورگر را بررسی کن.\n'+String(error?.message||error);
+  document.getElementById('retry').hidden=false;
+}
+document.getElementById('retry').addEventListener('click',()=>location.reload());
+const missing=Engine.getMissingFeatures({threads:false});
+if(missing.length)failure(new Error('امکانات پشتیبانی‌نشده: '+missing.join(', ')));
+else engine.startGame({
+  onProgress(current,total){
+    if(total>0){
+      progress.max=total;progress.value=current;
+      const value=Math.floor(current/total*100);
+      percent.textContent=value.toLocaleString('fa-IR')+'٪';
+      stage.textContent=current>=total?'در حال آماده‌سازی خانه…':'در حال دریافت بازی…';
+    }else{progress.removeAttribute('value');percent.textContent='';}
+  }
+}).then(()=>requestAnimationFrame(()=>{loading.hidden=true;document.getElementById('canvas').focus();})).catch(failure);
+</script>
+</body>
+</html>

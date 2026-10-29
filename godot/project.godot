@@ -1,0 +1,16 @@
+config_version=5
+[application]
+config/name="Mustache2 — شکار سیبیل"
+boot_splash/show_image=false
+boot_splash/bg_color=Color(0.055,0.075,0.10,1)
+run/main_scene="res://main.tscn"
+[display]
+window/size/viewport_width=1152
+window/size/viewport_height=768
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+[rendering]
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/default_filters/use_nearest_mipmap_filter=false
+environment/defaults/default_clear_color=Color(0.035,0.045,0.08,1)

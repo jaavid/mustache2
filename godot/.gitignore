@@ -1,0 +1,6 @@
+.godot/
+web/*
+!web/.gitkeep
+.tools/
+
+.venv/
